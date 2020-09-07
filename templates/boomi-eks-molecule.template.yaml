@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "deploy an example workload into an existing kubernetes cluster"
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Name of the EKS cluster to join
+  BoomiUsername:
+    Description: The email account associated with the Boomi account.
+    Type: String
+    NoEcho: true
+  BoomiPassword:
+    Description: The password associated with the Boomi account.
+    Type: String
+    NoEcho: true
+  BoomiAccountID:
+    Description: The Boomi account ID that you want to associate with the new Molecule cluster.
+    Type: String
+
+Resources:
+  KubeManifestSecret:
+    Type: "Custom::KubeManifest"
+    Version: '1.0'
+    Properties:
+      # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
+      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
+      ClusterName: !Ref ClusterName
+      # Kubernetes manifest
+      Manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: "boomi-secret"
+        type: Opaque
+        stringData:
+          username: !Ref BoomiUsername
+          password: !Ref BoomiPassword
+          account: !Ref BoomiAccountID
+
+  EKSMetricsServer:
+    Type: 'AWSQS::Kubernetes::Helm'
+    Properties:
+      ClusterID: !Ref ClusterName
+      Namespace: kube-system
+      Chart: stable/metrics-server
+      Values:
+        image.repository: k8s.gcr.io/metrics-server/metrics-server
+        image.tag: v0.3.7
+        serviceAccount.name: metrics-server
+        serviceAccount.create: true
+
+  KubeManifestMoleculeNLBSerivice:
+    Type: "Custom::KubeManifest"
+    Version: '1.0'
+    Properties:
+      # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
+      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
+      ClusterName: !Ref ClusterName
+      # Kubernetes manifest URL
+      Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_service.yaml
+
+  KubeManifestMoleculeStatefulSet:
+    Type: "Custom::KubeManifest"
+    Version: '1.0'
+    Properties:
+      # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
+      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
+      ClusterName: !Ref ClusterName
+      # Kubernetes manifest URL
+      Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_statefulset.yaml
