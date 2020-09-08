@@ -288,8 +288,13 @@ Parameters:
   BoomiAccountID:
     Description: The Boomi account ID that you want to associate with the new Molecule cluster.
     Type: String
-
+  SubnetTagging:
+    Description: To identify a cluster's subnets, the Kubernetes Cloud Controller Manager (cloud-controller-manager) and ALB Ingress Controller (alb-ingress-controller) query that cluster's subnets by using the following tag as a filter
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Disabled
 Conditions:
+  EnableSubnetTagging: !Equals [ !Ref SubnetTagging, Enabled]
   EnableFargate: !Not [!Equals [ !Ref FargateNamespaces, ""]]
   3AZDeployment: !Not [!Equals [!Ref PrivateSubnet3ID, ""]]
   2AZDeployment: !Or
@@ -509,6 +514,18 @@ Resources:
             - !Ref PrivateSubnet1ID
         EKSClusterName: !Ref EKSClusterName
         HttpProxy: !Ref HttpProxy
+
+  SubnetTaggings:
+    Condition: EnableSubnetTagging
+    Type: "Custom::SubnetTagging"
+    Version: '1.0'
+    Properties:
+      # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
+      ServiceToken: !GetAtt 'FunctionStack.Outputs.EKSSubnetTaggingLambdaArn'
+      ClusterName: !Ref EKSClusterName
+      VPCID: !Ref VPCID
+      PrivateSubnetIds: [!Ref PrivateSubnet1ID, !Ref PrivateSubnet2ID, !Ref PrivateSubnet3ID]
+      PublicSubnetIds: [!Ref PublicSubnet1ID, !Ref PublicSubnet2ID, !Ref PublicSubnet3ID]
 
   ClusterAutoScalerStack:
     Condition: EnableClusterAutoScaler

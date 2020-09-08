@@ -321,28 +321,6 @@ Resources:
       VpcConfig:
         SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds
-  CustomKubeManifestLambda:
-    DependsOn: [ CopyZips, LambdaSGCleanup ]
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub "EKS-QuickStart-CustomKubeManifest-${EKSClusterName}"
-      Handler: lambda_function.lambda_handler
-      MemorySize: 256
-      Role: !Ref KubernetesAdminRoleArn
-      Runtime: python3.7
-      Timeout: 900
-      Layers: [!Ref KubectlLayer, !Ref CrhelperLayer, !Ref AwsCliLayer]
-      Code:
-        S3Bucket: "boomi-eks-mumbai"
-        S3Key: !Sub 'lambda.zip'
-      Environment:
-        Variables:
-          KUBECONFIG: /tmp/.kube/config
-          HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
-          HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
-      VpcConfig:
-        SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
-        SubnetIds: !Ref EKSSubnetIds
   KubeGetLambda:
     DependsOn: [ CopyZips, LambdaSGCleanup ]
     Type: AWS::Lambda::Function
@@ -478,6 +456,42 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/FargateProfile/lambda.zip'
+  CustomKubeManifestLambda:
+    DependsOn: [ CopyZips, LambdaSGCleanup ]
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "EKS-QuickStart-CustomKubeManifest-${EKSClusterName}"
+      Handler: lambda_function.lambda_handler
+      MemorySize: 256
+      Role: !Ref KubernetesAdminRoleArn
+      Runtime: python3.7
+      Timeout: 900
+      Layers: [!Ref KubectlLayer, !Ref CrhelperLayer, !Ref AwsCliLayer]
+      Code:
+        S3Bucket: "boomi-eks-mumbai"
+        S3Key: !Sub 'lambda.zip'
+      Environment:
+        Variables:
+          KUBECONFIG: /tmp/.kube/config
+          HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+      VpcConfig:
+        SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
+        SubnetIds: !Ref EKSSubnetIds
+  EKSSubnetTaggingLambda:
+    DependsOn: [ CopyZips, LambdaSGCleanup ]
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "EKS-QuickStart-Subnet-Tagging"
+      Handler: lambda_function.lambda_handler
+      MemorySize: 256
+      Role: !Ref KubernetesAdminRoleArn
+      Runtime: python3.7
+      Timeout: 900
+      Layers: [!Ref KubectlLayer, !Ref CrhelperLayer, !Ref AwsCliLayer]
+      Code:
+        S3Bucket: "boomi-eks-mumbai"
+        S3Key: !Sub 'taglambda.zip'
 Outputs:
   DeleteBucketContentsLambdaArn:
     Value: !If [ CreateDeleteBucketContentsLambda, !GetAtt DeleteBucketContentsLambda.Arn, "" ]
@@ -493,3 +507,5 @@ Outputs:
     Value: !GetAtt NodeSGFunction.Arn
   FargateProfileLambdaArn:
     Value: !GetAtt FargateProfileLambda.Arn
+  EKSSubnetTaggingLambdaArn:
+    Value: !GetAtt EKSSubnetTaggingLambda.Arn

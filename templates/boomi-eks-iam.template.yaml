@@ -144,6 +144,10 @@ Resources:
                   - ec2:DescribeVpcs
                   - lambda:InvokeFunction
                   - s3:GetObject
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                  - ec2:ModifySubnetAttribute
+                  - ec2:ModifyVpcAttribute
                 Resource: "*"
               - Effect: Allow
                 Action:

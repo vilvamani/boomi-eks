@@ -205,8 +205,7 @@ Parameters:
   RemoteAccessCIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
-    Description: The CIDR IP range that is permitted to access the instances. We recommend
-      that you set this value to a trusted IP range.
+    Description: The CIDR IP range that is permitted to access the instances. We recommend that you set this value to a trusted IP range.
     Type: String
   EKSClusterLoggingTypes:
     Type: List<String>
@@ -320,7 +319,7 @@ Parameters:
     Description: "The size for the node's root EBS volumes."
     Type: String
   ManagedNodeGroupAMIType:
-    Description: Select one of the two AMI types for your managed node group (only applies if you chose "yes" for ManagedNodeGroup). GPU instance types should use the AL2_x86_64_GPU AMI type, which uses the Amazon EKS-optimized Linux AMI with GPU support. Non-GPU instances should use the AL2_x86_64 AMI type, which uses the Amazon EKS-optimized Linux AMI.
+    Description: Select one of the two AMI Types for your Managed Node Group (Only applies if you selected Managed Node Group "yes". ). GPU instance types should use the AL2_x86_64_GPU AMI type, which uses the Amazon EKS-optimized Linux AMI with GPU support. Non-GPU instances should use the AL2_x86_64 AMI type, which uses the Amazon EKS-optimized Linux AMI.
     AllowedValues: [ "AL2_x86_64", "AL2_x86_64_GPU", ""]
     Default: "AL2_x86_64"
     Type: String
@@ -414,12 +413,9 @@ Resources:
         PrivateSubnet3ID: !GetAtt VPCStack.Outputs.PrivateSubnet3AID
         NumberOfNodes: !Ref NumberOfNodes
         MaxNumberOfNodes: !Ref MaxNumberOfNodes
-        #NodeGroupName: Default
         NodeVolumeSize: !Ref NodeVolumeSize
         ManagedNodeGroup: "yes"
         ManagedNodeGroupAMIType: !Ref ManagedNodeGroupAMIType
-        #MangedNodeGroupLabel: !Ref MangedNodeGroupLabel
-        #LambdaZipsBucketName: !Ref LambdaZipsBucketName
         NodeInstanceType: !Ref NodeInstanceType
         RemoteAccessCIDR: !Ref RemoteAccessCIDR
         AdditionalEKSAdminUserArn: !Ref AdditionalEKSAdminUserArn
@@ -433,18 +429,17 @@ Resources:
         EfsThroughputMode: !Ref EfsThroughputMode
         EfsProvisionedThroughputInMibps: !Ref EfsProvisionedThroughputInMibps
         ProvisionBastionHost: Enabled
-        #EKSPublicAccessCIDRs: !Join [ ',', !Ref 'EKSPublicAccessCIDRs' ]
         EKSPublicAccessEndpoint: Disabled
         EKSPrivateAccessEndpoint: Enabled
         EKSClusterLoggingTypes: !Join [ ',', !Ref 'EKSClusterLoggingTypes' ]
         EKSEncryptSecrets: Enabled
-        #EKSEncryptSecretsKmsKeyArn: !Ref EKSEncryptSecretsKmsKeyArn
         ProvisionALBIngressController: Enabled
         IamOidcProvider: !Ref IamOidcProvider
         EKSClusterName: !Ref EKSClusterName
         BoomiUsername: !Ref BoomiUsername
         BoomiPassword: !Ref BoomiPassword
         BoomiAccountID: !Ref BoomiAccountID
+        SubnetTagging: Disabled
 Outputs:
   EKSClusterName:
     Value: !GetAtt EKSStack.Outputs.EKSClusterName
