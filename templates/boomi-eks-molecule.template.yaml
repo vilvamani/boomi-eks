@@ -50,6 +50,9 @@ Resources:
 
   KubeManifestMoleculeNLBSerivice:
     Type: "Custom::KubeManifest"
+    Metadata:
+      DependsOn:
+       - !Ref EKSMetricsServer
     Version: '1.0'
     Properties:
       # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
@@ -60,6 +63,9 @@ Resources:
 
   KubeManifestMoleculeStatefulSet:
     Type: "Custom::KubeManifest"
+    Metadata:
+      DependsOn:
+       - !Ref EKSMetricsServer
     Version: '1.0'
     Properties:
       # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
