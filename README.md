@@ -1,2 +1,1 @@
-# quickstart-amazon-eks
-quickstart-amazon-eks
+# Kubernetes Reference Architecture - Boomi Molecule

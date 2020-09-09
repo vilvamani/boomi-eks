@@ -139,7 +139,7 @@ Parameters:
     AllowedPattern: ^[0-9a-zA-Z-/.]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: quickstart-amazon-eks/
+    Default: quickstart-boomi-molecule-eks/
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
@@ -346,7 +346,7 @@ Resources:
       cfn-lint: { config: { ignore_checks: [ W9901 ] } }
     Properties:
       TemplateURL: !Sub
-        - 'https://boomi-eks-quickstart.s3.amazonaws.com/boomi-eks-getvpc-cidr.template.yaml'
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/boomi-eks-getvpc-cidr.template.yaml'
         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
@@ -357,7 +357,7 @@ Resources:
       cfn-lint: { config: { ignore_checks: [ W9901 ] } }
     Properties:
       TemplateURL: !Sub
-        - 'https://boomi-eks-quickstart.s3.amazonaws.com/boomi-eks.template.yaml'
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/boomi-eks.template.yaml'
         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:

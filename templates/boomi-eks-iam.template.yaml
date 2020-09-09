@@ -21,7 +21,7 @@ Parameters:
     AllowedPattern: ^[0-9a-zA-Z-/.]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: quickstart-amazon-eks/
+    Default: quickstart-boomi-molecule-eks/
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).

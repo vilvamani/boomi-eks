@@ -21,7 +21,7 @@ Parameters:
     AllowedPattern: ^[0-9a-zA-Z-/.]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: quickstart-amazon-eks/
+    Default: quickstart-boomi-molecule-eks/
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
@@ -97,6 +97,8 @@ Resources:
       - functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip
       - functions/packages/awscliLayer/lambda.zip
       - functions/packages/FargateProfile/lambda.zip
+      - functions/packages/CustomKubeManifest/lambda.zip
+      - functions/packages/SubnetTagging/lambda.zip
   ArtifactCopyPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -214,7 +216,7 @@ Resources:
     Type: Custom::RegisterType
     Properties:
       ServiceToken: !GetAtt RegisterTypeFunction.Arn
-      Version: "2.0.0-beta1"
+      Version: "3.0.1"
       TypeName: "AWSQS::EKS::Cluster"
       SchemaHandlerPackage: !Sub "s3://${LambdaZipsBucketName}/${QSS3KeyPrefix}functions/packages/EksClusterResource/awsqs-eks-cluster.zip"
       IamPolicy:
@@ -239,7 +241,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt RegisterTypeFunction.Arn
       TypeName: "AWSQS::Kubernetes::Helm"
-      Version: "2.0.0-beta1"
+      Version: "3.0.1"
       SchemaHandlerPackage: !Sub "s3://${LambdaZipsBucketName}/${QSS3KeyPrefix}functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip"
       IamPolicy:
         Version: '2012-10-17'
@@ -468,8 +470,8 @@ Resources:
       Timeout: 900
       Layers: [!Ref KubectlLayer, !Ref CrhelperLayer, !Ref AwsCliLayer]
       Code:
-        S3Bucket: "boomi-eks-mumbai"
-        S3Key: !Sub 'lambda.zip'
+        S3Bucket: !Ref LambdaZipsBucketName
+        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/CustomKubeManifest/lambda.zip'
       Environment:
         Variables:
           KUBECONFIG: /tmp/.kube/config
@@ -490,8 +492,8 @@ Resources:
       Timeout: 900
       Layers: [!Ref KubectlLayer, !Ref CrhelperLayer, !Ref AwsCliLayer]
       Code:
-        S3Bucket: "boomi-eks-mumbai"
-        S3Key: !Sub 'taglambda.zip'
+        S3Bucket: !Ref LambdaZipsBucketName
+        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/SubnetTagging/lambda.zip'
 Outputs:
   DeleteBucketContentsLambdaArn:
     Value: !If [ CreateDeleteBucketContentsLambda, !GetAtt DeleteBucketContentsLambda.Arn, "" ]
