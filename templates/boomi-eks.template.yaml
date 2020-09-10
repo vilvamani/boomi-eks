@@ -31,10 +31,6 @@ Parameters:
   EKSPublicAccessCIDRs:
     Type: List<String>
     Default: 0.0.0.0/0
-  EKSPublicAccessEndpoint:
-    Type: String
-    AllowedValues: [Enabled, Disabled]
-    Default: Disabled
   EKSPrivateAccessEndpoint:
     Type: String
     AllowedValues: [Enabled, Disabled]
@@ -293,6 +289,10 @@ Parameters:
     Type: String
     AllowedValues: [Enabled, Disabled]
     Default: Disabled
+  SSLCertificateArn:
+    Description: The SSL Certificate ID used with the load balancer.
+    Type: String
+    Default: ''
 Conditions:
   EnableSubnetTagging: !Equals [ !Ref SubnetTagging, Enabled]
   EnableFargate: !Not [!Equals [ !Ref FargateNamespaces, ""]]
@@ -612,7 +612,7 @@ Resources:
         BastionRole: !GetAtt IamStack.Outputs.BastionRole
         FunctionRoleArn: !GetAtt IamStack.Outputs.KubernetesAdminRoleArn
         EKSPublicAccessCIDRs: !Join [ ',', !Ref 'EKSPublicAccessCIDRs' ]
-        EKSPublicAccessEndpoint: !Ref EKSPublicAccessEndpoint
+        EKSPublicAccessEndpoint: Disabled
         EKSPrivateAccessEndpoint: !Ref EKSPrivateAccessEndpoint
         EKSClusterLoggingTypes: !Join [ ',', !Ref 'EKSClusterLoggingTypes' ]
         EKSEncryptSecrets: !Ref EKSEncryptSecrets
@@ -650,7 +650,7 @@ Resources:
         BoomiUsername: !Ref BoomiUsername
         BoomiPassword: !Ref BoomiPassword
         BoomiAccountID: !Ref BoomiAccountID
-
+        CertificateArn: !Ref SSLCertificateArn
 Outputs:
   BastionIP:
     Value: !If

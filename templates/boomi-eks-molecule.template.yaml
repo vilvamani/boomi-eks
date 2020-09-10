@@ -15,7 +15,11 @@ Parameters:
   BoomiAccountID:
     Description: The Boomi account ID that you want to associate with the new Molecule cluster.
     Type: String
-
+    NoEcho: true
+  CertificateArn:
+    Description: The SSL Certificate ID used with the load balancer.
+    Type: String
+    Default: ''
 Resources:
   KubeManifestSecret:
     Type: "Custom::KubeManifest"
@@ -46,7 +50,7 @@ Resources:
         image.tag: v0.3.7
         serviceAccount.name: metrics-server
         serviceAccount.create: true
-  KubeManifestMoleculeNLBSerivice:
+  KubeManifestMoleculeALBSerivice:
     Type: "Custom::KubeManifest"
     Metadata:
       DependsOn:
@@ -57,8 +61,46 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      Url: https://raw.githubusercontent.com/ikanski/EKS/master/config/boomi_molecule_eks_service.yaml
-
+      Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_service-alb.yaml
+  KubeManifestMoleculeIngress:
+    Type: "Custom::KubeManifest"
+    Metadata:
+      DependsOn:
+       - !Ref KubeManifestMoleculeALBSerivice
+    Version: '1.0'
+    Properties:
+      # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
+      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
+      ClusterName: !Ref ClusterName
+      # Kubernetes manifest URL
+      #Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_service.yaml
+      Manifest:
+        apiVersion: extensions/v1beta1
+        kind: Ingress
+        metadata:
+          name: molecule-ingress
+          annotations:
+            # trigger the alb-ingress-controller
+            kubernetes.io/ingress.class: alb
+            # set ALB parameters
+            alb.ingress.kubernetes.io/target-type: instance
+            alb.ingress.kubernetes.io/scheme: internet-facing
+            alb.ingress.kubernetes.io/certificate-arn: !Ref CertificateArn
+            alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+            alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06
+            alb.ingress.kubernetes.io/load-balancer-attributes: routing.http2.enabled=true
+            # allow 404s on the health check
+            alb.ingress.kubernetes.io/healthcheck-path: "/"
+            alb.ingress.kubernetes.io/success-codes: "200,404"
+        spec:
+          # forward all requests to nginx-ingress-controller
+          rules:
+            - http:
+                paths:
+                  - path: /*
+                    backend:
+                      serviceName: molecule-service
+                      servicePort: 443
   KubeManifestMoleculeStatefulSet:
     Type: "Custom::KubeManifest"
     Metadata:
