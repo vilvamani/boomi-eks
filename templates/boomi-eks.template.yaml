@@ -243,10 +243,13 @@ Parameters:
   BastionVariables:
     Type: String
     Default: ""
-  EfsStorageClass:
+  LoadBalancerType:
     Type: String
-    AllowedValues: [ Enabled, Disabled ]
-    Default: Disabled
+    Default: NLB
+    AllowedValues: 
+      - ALB
+      - NLB
+    Description: EKS Service Load Balancer Type.
   EfsPerformanceMode:
     Type: String
     AllowedValues: [ generalPurpose, maxIO ]
@@ -311,7 +314,6 @@ Conditions:
   EnableClusterAutoScaler: !Equals [!Ref 'ProvisionClusterAutoScaler', 'Enabled']
   EnableALBIngressController: !Equals [!Ref 'ProvisionALBIngressController', 'Enabled']
   EnableMonitoringPrometheusGrafana: !Equals [!Ref 'ProvisionMonitoringStack', 'Prometheus + Grafana']
-  EnableEfs: !Equals [!Ref 'EfsStorageClass', 'Enabled']
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
 Resources:
   BastionEksPermissions:
@@ -535,7 +537,6 @@ Resources:
         EksClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
         KubernetesVersion: !Ref KubernetesVersion
   EfsStack:
-    Condition: EnableEfs
     Type: AWS::CloudFormation::Stack
     Metadata:
       DependsOn:
@@ -651,6 +652,7 @@ Resources:
         BoomiPassword: !Ref BoomiPassword
         BoomiAccountID: !Ref BoomiAccountID
         CertificateArn: !Ref SSLCertificateArn
+        LoadBalancerType: !Ref LoadBalancerType
 Outputs:
   BastionIP:
     Value: !If

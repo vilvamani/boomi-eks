@@ -53,6 +53,7 @@ Metadata:
           - NodeVolumeSize
           - ManagedNodeGroupAMIType
           - EKSClusterLoggingTypes
+          - LoadBalancerType
           - AdditionalEKSAdminUserArn
           - AdditionalEKSAdminRoleArn
           - IamOidcProvider
@@ -125,6 +126,8 @@ Metadata:
         default: EFS provisioned throughput in Mibps
       EKSClusterLoggingTypes:
         default: EKS cluster logging types
+      LoadBalancerType:
+        default: EKS Load Balancer Type  
       IamOidcProvider:
         default: IAM OIDC provider
       EKSClusterName:
@@ -225,6 +228,13 @@ Parameters:
     AllowedPattern: "^(api|audit|authenticator|controllerManager|scheduler|,)*$"
     ConstraintDescription: Valid logging types are api, audit, authenticator, controllerManager, scheduler.
     Description: EKS cluster control plane logs to be exported to CloudWatch Logs.
+  LoadBalancerType:
+    Type: String
+    Default: NLB
+    AllowedValues: 
+      - ALB
+      - NLB
+    Description: EKS Service Load Balancer Type.
   VPCCIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
@@ -481,7 +491,7 @@ Resources:
         VPCCIDR: !Ref 'VPCCIDR'
         KubernetesVersion: !Ref KubernetesVersion
         ProvisionClusterAutoScaler: Enabled
-        EfsStorageClass: Enabled
+        LoadBalancerType: !Ref LoadBalancerType
         EfsPerformanceMode: !Ref EfsPerformanceMode
         EfsThroughputMode: !Ref EfsThroughputMode
         EfsProvisionedThroughputInMibps: !Ref EfsProvisionedThroughputInMibps

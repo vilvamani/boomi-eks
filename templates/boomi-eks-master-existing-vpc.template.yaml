@@ -46,6 +46,7 @@ Metadata:
           - NodeVolumeSize
           - ManagedNodeGroupAMIType
           - EKSClusterLoggingTypes
+          - LoadBalancerType
           - AdditionalEKSAdminUserArn
           - AdditionalEKSAdminRoleArn
           - IamOidcProvider
@@ -116,6 +117,8 @@ Metadata:
         default: EFS provisioned throughput in Mibps
       EKSClusterLoggingTypes:
         default: EKS cluster logging types
+      LoadBalancerType:
+        default: EKS Load Balancer Type  
       IamOidcProvider:
         default: IAM OIDC provider
       EKSClusterName:
@@ -172,6 +175,13 @@ Parameters:
     AllowedPattern: "^(api|audit|authenticator|controllerManager|scheduler|,)*$"
     ConstraintDescription: Valid logging types are api, audit, authenticator, controllerManager, scheduler.
     Description: EKS cluster control plane logs to be exported to CloudWatch Logs.
+  LoadBalancerType:
+    Type: String
+    Default: NLB
+    AllowedValues: 
+      - ALB
+      - NLB
+    Description: EKS Service Load Balancer Type.
   AdditionalEKSAdminUserArn:
     Default: ""
     Description: "[OPTIONAL] IAM user Amazon Resource Name (ARN) to be granted admin access to the EKS cluster"
@@ -440,7 +450,7 @@ Resources:
         VPCCIDR: !GetAtt 'VPCCIDRStack.Outputs.VPCCidrBlock'
         KubernetesVersion: !Ref KubernetesVersion
         ProvisionClusterAutoScaler: Enabled
-        EfsStorageClass: Enabled
+        LoadBalancerType: !Ref LoadBalancerType
         EfsPerformanceMode: !Ref EfsPerformanceMode
         EfsThroughputMode: !Ref EfsThroughputMode
         EfsProvisionedThroughputInMibps: !Ref EfsProvisionedThroughputInMibps
