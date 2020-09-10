@@ -72,7 +72,6 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      #Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_service.yaml
       Manifest:
         apiVersion: v1
         kind: Service
@@ -93,6 +92,9 @@ Resources:
           ports:
           - protocol: TCP
             port: 443
+            targetPort: 9093
+          - protocol: TCP
+            port: 80
             targetPort: 9090
   KubeManifestMoleculeALBSerivice:
     Condition: ApplicationLoadBalancer
@@ -119,7 +121,6 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      #Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_service.yaml
       Manifest:
         apiVersion: extensions/v1beta1
         kind: Ingress
