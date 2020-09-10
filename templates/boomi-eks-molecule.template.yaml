@@ -35,7 +35,6 @@ Resources:
           username: !Ref BoomiUsername
           password: !Ref BoomiPassword
           account: !Ref BoomiAccountID
-
   EKSMetricsServer:
     Type: 'AWSQS::Kubernetes::Helm'
     Properties:
@@ -47,7 +46,6 @@ Resources:
         image.tag: v0.3.7
         serviceAccount.name: metrics-server
         serviceAccount.create: true
-
   KubeManifestMoleculeNLBSerivice:
     Type: "Custom::KubeManifest"
     Metadata:
@@ -59,7 +57,7 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_service.yaml
+      Url: https://raw.githubusercontent.com/ikanski/EKS/master/config/boomi_molecule_eks_service.yaml
 
   KubeManifestMoleculeStatefulSet:
     Type: "Custom::KubeManifest"
@@ -73,7 +71,6 @@ Resources:
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
       Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_statefulset.yaml
-
   KubeManifestHPA:
     Type: "Custom::KubeManifest"
     DeletionPolicy: Retain

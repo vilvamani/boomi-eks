@@ -313,7 +313,6 @@ Conditions:
   EnableMonitoringPrometheusGrafana: !Equals [!Ref 'ProvisionMonitoringStack', 'Prometheus + Grafana']
   EnableEfs: !Equals [!Ref 'EfsStorageClass', 'Enabled']
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
-
 Resources:
   BastionEksPermissions:
     Condition: EnableBastion
@@ -332,7 +331,6 @@ Resources:
             Resource: !Sub "arn:${AWS::Partition}:eks:${AWS::Region}:${AWS::AccountId}:cluster/${EKSControlPlane.Outputs.EKSName}"
       Roles:
         - !GetAtt IamStack.Outputs.BastionRole
-
   BastionStack:
     Condition: EnableBastion
     Type: AWS::CloudFormation::Stack
@@ -379,7 +377,6 @@ Resources:
           K8S_ENDPOINT=${EKSControlPlane.Outputs.EKSEndpoint}${Joiner}
           ${BastionVariables}
         - Joiner: !If [AdditionalVars, ",", ""]
-
   NodeGroupStack:
     Type: "AWS::CloudFormation::Stack"
     Properties:
@@ -419,7 +416,6 @@ Resources:
         QSS3BucketRegion: !Ref QSS3BucketRegion
         CleanupSecurityGroupDependenciesLambdaArn: !GetAtt FunctionStack.Outputs.CleanupSecurityGroupDependenciesLambdaArn
         NodeSGFunctionArn: !GetAtt FunctionStack.Outputs.NodeSGFunctionArn
-
   BastionSShToNodesGroup1:
     Condition: EnableBastion
     Type: "AWS::EC2::SecurityGroupIngress"
@@ -430,7 +426,6 @@ Resources:
       IpProtocol: tcp
       ToPort: 22
       FromPort: 22
-
   BastionSShToNodesGroup2:
     Condition: EnableBastion
     Type: "AWS::EC2::SecurityGroupIngress"
@@ -441,7 +436,6 @@ Resources:
       IpProtocol: tcp
       ToPort: 22
       FromPort: 22
-
   BastionSShToNodesGroup3:
     Condition: EnableBastion
     Type: "AWS::EC2::SecurityGroupIngress"
@@ -452,7 +446,6 @@ Resources:
       IpProtocol: tcp
       ToPort: 22
       FromPort: 22
-
   BastionToAPIServerAccess:
     Condition: EnableBastion
     Type: "AWS::EC2::SecurityGroupIngress"
@@ -463,7 +456,6 @@ Resources:
       IpProtocol: tcp
       ToPort: 443
       FromPort: 443
-
   IamStack:
     Type: "AWS::CloudFormation::Stack"
     Properties:
@@ -478,7 +470,6 @@ Resources:
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
         CreateBastionRole: !If [CustomBastionRole, "Disabled", !If [EnableBastion, "Enabled", "Disabled"]]
         BastionIAMRoleName: !Ref BastionIAMRoleName
-
   FunctionStack:
     Type: "AWS::CloudFormation::Stack"
     Properties:
@@ -514,7 +505,6 @@ Resources:
             - !Ref PrivateSubnet1ID
         EKSClusterName: !Ref EKSClusterName
         HttpProxy: !Ref HttpProxy
-
   SubnetTaggings:
     Condition: EnableSubnetTagging
     Type: "Custom::SubnetTagging"
@@ -526,7 +516,6 @@ Resources:
       VPCID: !Ref VPCID
       PrivateSubnetIds: [!Ref PrivateSubnet1ID, !Ref PrivateSubnet2ID, !Ref PrivateSubnet3ID]
       PublicSubnetIds: [!Ref PublicSubnet1ID, !Ref PublicSubnet2ID, !Ref PublicSubnet3ID]
-
   ClusterAutoScalerStack:
     Condition: EnableClusterAutoScaler
     Metadata:
@@ -545,7 +534,6 @@ Resources:
         NodeAutoScalingGroup3: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup3
         EksClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
         KubernetesVersion: !Ref KubernetesVersion
-
   EfsStack:
     Condition: EnableEfs
     Type: AWS::CloudFormation::Stack
@@ -567,11 +555,9 @@ Resources:
         PerformanceMode: !Ref EfsPerformanceMode
         EfsProvisionedThroughputInMibps: !Ref EfsProvisionedThroughputInMibps
         ThroughputMode: !Ref EfsThroughputMode
-
   LambdaZipsBucket:
     Type: AWS::S3::Bucket
     Condition: CreateLambdaZipsBucket
-
   DeleteBucketContents:
     Condition: CreateLambdaZipsBucket
     Type: Custom::DeleteBucketContents
@@ -579,7 +565,6 @@ Resources:
     Properties:
       ServiceToken: !GetAtt 'FunctionStack.Outputs.DeleteBucketContentsLambdaArn'
       Bucket: !Ref 'LambdaZipsBucket'
-
   CleanupLambdas:
     Condition: CreateLambdaZipsBucket
     Type: Custom::CleanupLambdas
@@ -587,13 +572,11 @@ Resources:
     Properties:
       ServiceToken: !GetAtt 'FunctionStack.Outputs.CleanupLambdasLambdaArn'
       SecurityGroupId: !Ref ControlPlaneSecurityGroup
-
   ControlPlaneSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Cluster communication
       VpcId: !Ref VPCID
-
   ControlPlaneSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -603,7 +586,6 @@ Resources:
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-
   EKSControlPlane:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -637,7 +619,6 @@ Resources:
         EKSEncryptSecretsKmsKeyArn: !Ref EKSEncryptSecretsKmsKeyArn
         IamOidcProvider: !If [ EnableALBIngressController, 'Enabled', !Ref IamOidcProvider ]
         EKSClusterName: !Ref EKSClusterName
-
   ALBIngressStack:
     Metadata:
       DependsOn:
@@ -653,7 +634,6 @@ Resources:
       Parameters:
         OIDCIssuerURLWithoutProtocol:  !Join [ '', !Split [ 'https://', !GetAtt EKSControlPlane.Outputs.OIDCIssuerURL ] ]
         ClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
-
   DellBoomiMolecule:
     Metadata:
       DependsOn:
