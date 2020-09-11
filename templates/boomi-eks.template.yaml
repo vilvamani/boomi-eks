@@ -188,8 +188,8 @@ Parameters:
     Default: ""
   KubernetesVersion:
     Type: String
-    AllowedValues: [ "1.16" ]
-    Default: "1.16"
+    AllowedValues: [ "1.17", "1.16" ]
+    Default: "1.17"
   ProvisionClusterAutoScaler:
     Type: String
     AllowedValues: [ "Enabled", "Disabled" ]
@@ -379,7 +379,7 @@ Resources:
           K8S_ENDPOINT=${EKSControlPlane.Outputs.EKSEndpoint}${Joiner}
           ${BastionVariables}
         - Joiner: !If [AdditionalVars, ",", ""]
-  NodeGroupStack:
+  NodeGroupStack1:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       TemplateURL: !Sub
@@ -388,13 +388,10 @@ Resources:
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         TargetGroupARNs: ""
-        ProvisionClusterAutoScaler: !Ref ProvisionClusterAutoScaler
         HttpProxy: !Ref HttpProxy
         KeyPairName: !Ref 'KeyPairName'
         NodeAMIOS: !Ref NodeAMIOS
         PrivateSubnet1ID: !Ref PrivateSubnet1ID
-        PrivateSubnet2ID: !If [2AZDeployment, !Ref PrivateSubnet2ID, !Ref "AWS::NoValue" ]
-        PrivateSubnet3ID: !If [3AZDeployment, !Ref PrivateSubnet3ID, !Ref "AWS::NoValue" ]
         VPCID: !Ref VPCID
         VPCCIDR: !Ref VPCCIDR
         NodeInstanceType: !Ref NodeInstanceType
@@ -405,7 +402,7 @@ Resources:
         CustomAmiId: !Ref CustomAmiId
         ManagedNodeGroup: !Ref ManagedNodeGroup
         ManagedNodeGroupAMIType: !Ref ManagedNodeGroupAMIType
-        MangedNodeGroupLabel: !Ref MangedNodeGroupLabel
+        MangedNodeGroupLabel: EKSManagedNodeGroup1
         EKSControlPlane: !GetAtt EKSControlPlane.Outputs.EKSName
         ControlPlaneSecurityGroup: !Ref ControlPlaneSecurityGroup
         NodeInstanceProfile: !GetAtt IamStack.Outputs.NodeInstanceProfile
@@ -416,38 +413,77 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
         QSS3BucketRegion: !Ref QSS3BucketRegion
-        CleanupSecurityGroupDependenciesLambdaArn: !GetAtt FunctionStack.Outputs.CleanupSecurityGroupDependenciesLambdaArn
         NodeSGFunctionArn: !GetAtt FunctionStack.Outputs.NodeSGFunctionArn
-  BastionSShToNodesGroup1:
-    Condition: EnableBastion
-    Type: "AWS::EC2::SecurityGroupIngress"
+  NodeGroupStack2:
+    Type: "AWS::CloudFormation::Stack"
     Properties:
-      Description: Allow SSH from Bastion server to Nodes
-      GroupId: !GetAtt NodeGroupStack.Outputs.EKSNodeSecurityGroup1
-      SourceSecurityGroupId: !GetAtt BastionStack.Outputs.BastionSecurityGroupID
-      IpProtocol: tcp
-      ToPort: 22
-      FromPort: 22
-  BastionSShToNodesGroup2:
-    Condition: EnableBastion
-    Type: "AWS::EC2::SecurityGroupIngress"
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/boomi-eks-nodegroup.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        TargetGroupARNs: ""
+        HttpProxy: !Ref HttpProxy
+        KeyPairName: !Ref 'KeyPairName'
+        NodeAMIOS: !Ref NodeAMIOS
+        PrivateSubnet1ID: !Ref PrivateSubnet2ID
+        VPCID: !Ref VPCID
+        VPCCIDR: !Ref VPCCIDR
+        NodeInstanceType: !Ref NodeInstanceType
+        NumberOfNodes: !Ref NumberOfNodes
+        MaxNumberOfNodes: !Ref MaxNumberOfNodes
+        NodeGroupName: !Ref NodeGroupName
+        NodeVolumeSize: !Ref NodeVolumeSize
+        CustomAmiId: !Ref CustomAmiId
+        ManagedNodeGroup: !Ref ManagedNodeGroup
+        ManagedNodeGroupAMIType: !Ref ManagedNodeGroupAMIType
+        MangedNodeGroupLabel: EKSManagedNodeGroup2
+        EKSControlPlane: !GetAtt EKSControlPlane.Outputs.EKSName
+        ControlPlaneSecurityGroup: !Ref ControlPlaneSecurityGroup
+        NodeInstanceProfile: !GetAtt IamStack.Outputs.NodeInstanceProfile
+        NodeInstanceRoleName: !GetAtt IamStack.Outputs.NodeInstanceRoleName
+        NodeInstanceRoleArn: !GetAtt IamStack.Outputs.NodeInstanceRoleArn
+        KubernetesVersion: !Ref KubernetesVersion
+        BootstrapArguments: !Ref BootstrapArguments
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        NodeSGFunctionArn: !GetAtt FunctionStack.Outputs.NodeSGFunctionArn
+  NodeGroupStack3:
+    Type: "AWS::CloudFormation::Stack"
     Properties:
-      Description: Allow SSH from Bastion server to Nodes
-      GroupId: !GetAtt NodeGroupStack.Outputs.EKSNodeSecurityGroup2
-      SourceSecurityGroupId: !GetAtt BastionStack.Outputs.BastionSecurityGroupID
-      IpProtocol: tcp
-      ToPort: 22
-      FromPort: 22
-  BastionSShToNodesGroup3:
-    Condition: EnableBastion
-    Type: "AWS::EC2::SecurityGroupIngress"
-    Properties:
-      Description: Allow SSH from Bastion server to Nodes
-      GroupId: !GetAtt NodeGroupStack.Outputs.EKSNodeSecurityGroup3
-      SourceSecurityGroupId: !GetAtt BastionStack.Outputs.BastionSecurityGroupID
-      IpProtocol: tcp
-      ToPort: 22
-      FromPort: 22
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/boomi-eks-nodegroup.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        TargetGroupARNs: ""
+        HttpProxy: !Ref HttpProxy
+        KeyPairName: !Ref 'KeyPairName'
+        NodeAMIOS: !Ref NodeAMIOS
+        PrivateSubnet1ID: !Ref PrivateSubnet3ID
+        VPCID: !Ref VPCID
+        VPCCIDR: !Ref VPCCIDR
+        NodeInstanceType: !Ref NodeInstanceType
+        NumberOfNodes: !Ref NumberOfNodes
+        MaxNumberOfNodes: !Ref MaxNumberOfNodes
+        NodeGroupName: !Ref NodeGroupName
+        NodeVolumeSize: !Ref NodeVolumeSize
+        CustomAmiId: !Ref CustomAmiId
+        ManagedNodeGroup: !Ref ManagedNodeGroup
+        ManagedNodeGroupAMIType: !Ref ManagedNodeGroupAMIType
+        MangedNodeGroupLabel: EKSManagedNodeGroup3
+        EKSControlPlane: !GetAtt EKSControlPlane.Outputs.EKSName
+        ControlPlaneSecurityGroup: !Ref ControlPlaneSecurityGroup
+        NodeInstanceProfile: !GetAtt IamStack.Outputs.NodeInstanceProfile
+        NodeInstanceRoleName: !GetAtt IamStack.Outputs.NodeInstanceRoleName
+        NodeInstanceRoleArn: !GetAtt IamStack.Outputs.NodeInstanceRoleArn
+        KubernetesVersion: !Ref KubernetesVersion
+        BootstrapArguments: !Ref BootstrapArguments
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        NodeSGFunctionArn: !GetAtt FunctionStack.Outputs.NodeSGFunctionArn
   BastionToAPIServerAccess:
     Condition: EnableBastion
     Type: "AWS::EC2::SecurityGroupIngress"
@@ -531,9 +567,9 @@ Resources:
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         NodeInstanceRoleName: !GetAtt IamStack.Outputs.NodeInstanceRoleName
-        NodeAutoScalingGroup1: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup1
-        NodeAutoScalingGroup2: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup2
-        NodeAutoScalingGroup3: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup3
+        NodeAutoScalingGroup1: !GetAtt NodeGroupStack1.Outputs.NodeAutoScalingGroup
+        NodeAutoScalingGroup2: !GetAtt NodeGroupStack2.Outputs.NodeAutoScalingGroup
+        NodeAutoScalingGroup3: !GetAtt NodeGroupStack3.Outputs.NodeAutoScalingGroup
         EksClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
         KubernetesVersion: !Ref KubernetesVersion
   EfsStack:
@@ -541,6 +577,9 @@ Resources:
     Metadata:
       DependsOn:
         - !Ref ControlPlaneSecurityGroupIngress
+        - !Ref NodeGroupStack1
+        - !Ref NodeGroupStack2
+        - !Ref NodeGroupStack3
     Properties:
       TemplateURL: !Sub
         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/boomi-eks-efs.template.yaml'
@@ -624,7 +663,9 @@ Resources:
     Metadata:
       DependsOn:
         - !Ref ControlPlaneSecurityGroupIngress
-        - !Ref NodeGroupStack
+        - !Ref NodeGroupStack1
+        - !Ref NodeGroupStack2
+        - !Ref NodeGroupStack3
     Condition: EnableALBIngressController
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -638,7 +679,7 @@ Resources:
   DellBoomiMolecule:
     Metadata:
       DependsOn:
-        - !Ref NodeGroupStack
+        - !Ref EfsStack
         - !Ref ALBIngressStack
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -686,14 +727,14 @@ Outputs:
   ControlPlaneSecurityGroup:
     Value: !GetAtt ControlPlaneSecurityGroup.GroupId
   ManagedNodeGroup1SecurityGroup:
-    Value: !GetAtt NodeGroupStack.Outputs.EKSNodeSecurityGroup1
+    Value: !GetAtt NodeGroupStack1.Outputs.EKSNodeSecurityGroup
   ManagedNodeGroup2SecurityGroup:
-    Value: !GetAtt NodeGroupStack.Outputs.EKSNodeSecurityGroup2
+    Value: !GetAtt NodeGroupStack2.Outputs.EKSNodeSecurityGroup
   ManagedNodeGroup3SecurityGroup:
-    Value: !GetAtt NodeGroupStack.Outputs.EKSNodeSecurityGroup3
+    Value: !GetAtt NodeGroupStack3.Outputs.EKSNodeSecurityGroup
   NodeAutoScalingGroup1:
-    Value: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup1
+    Value: !GetAtt NodeGroupStack1.Outputs.NodeAutoScalingGroup
   NodeAutoScalingGroup2:
-    Value: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup2
+    Value: !GetAtt NodeGroupStack2.Outputs.NodeAutoScalingGroup
   NodeAutoScalingGroup3:
-    Value: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup3
+    Value: !GetAtt NodeGroupStack3.Outputs.NodeAutoScalingGroup

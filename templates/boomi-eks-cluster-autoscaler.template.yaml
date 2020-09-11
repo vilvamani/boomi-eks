@@ -16,24 +16,23 @@ Parameters:
     Type: String
   KubernetesVersion:
     Type: String
-    AllowedValues: [ "1.16" ]
-    Default: "1.16"
+    AllowedValues: [ "1.17", "1.16", "1.15" ]
+    Default: "1.17"
 # NOTE: The cluster autoscaler version number is dependant on the K8S version it is being
 #       deployed into. See...
 #       https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler#releases
 #       https://github.com/kubernetes/autoscaler/releases
 Conditions:
+  is17: !Equals [ !Ref KubernetesVersion, "1.17" ]
   is16: !Equals [ !Ref KubernetesVersion, "1.16" ]
 Mappings:
   K8sVersionMap:
-    "1.13":
-      ImageTag: v1.13.9
-    "1.14":
-      ImageTag: v1.14.7
     "1.15":
       ImageTag: v1.15.5
     "1.16":
       ImageTag: v1.16.5
+    "1.17":
+      ImageTag: v1.17.3
 Resources:
   # Policy to apply to NodeInstanceRole
   ClusterAutoScalerPolicyNode1:
@@ -57,7 +56,6 @@ Resources:
             Resource: !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${NodeAutoScalingGroup1}"
       Roles:
         - !Ref NodeInstanceRoleName
-
   ClusterAutoScalerPolicyNode2:
     Type: AWS::IAM::Policy
     Properties:
@@ -79,7 +77,6 @@ Resources:
             Resource: !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${NodeAutoScalingGroup2}"
       Roles:
         - !Ref NodeInstanceRoleName
-
   ClusterAutoScalerPolicyNode3:
     Type: AWS::IAM::Policy
     Properties:
@@ -101,7 +98,6 @@ Resources:
             Resource: !Sub "arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${NodeAutoScalingGroup3}"
       Roles:
         - !Ref NodeInstanceRoleName
-
   # Install auto-scaler helm chart
   AutoScalerHelmChart:
     DependsOn:
@@ -109,6 +105,7 @@ Resources:
       - ClusterAutoScalerPolicyNode2
       - ClusterAutoScalerPolicyNode3
     Type: "AWSQS::Kubernetes::Helm"
+    Metadata: { cfn-lint: { config: { ignore_checks: [ E3012 ] } } }
     Properties:
       ClusterID: !Ref EksClusterName
       Namespace: kube-system
@@ -120,7 +117,10 @@ Resources:
           - K8sVersionMap
           - !Ref KubernetesVersion
           - ImageTag
-        image.repository: !If [ is16, us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler, k8s.gcr.io/cluster-autoscaler ]
+        image.repository: !If
+        - is17
+        - k8s.gcr.io/autoscaling/cluster-autoscaler
+        - !If [ is16, us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler, k8s.gcr.io/cluster-autoscaler ]
         rbac.create: true
         rbac.pspEnabled: true
         autoDiscovery.clusterName: !Ref EksClusterName
