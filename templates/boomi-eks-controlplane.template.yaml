@@ -24,8 +24,8 @@ Parameters:
     Default: ""
   KubernetesVersion:
     Type: String
-    AllowedValues: [ "1.16", "1.15", "1.14", "1.13" ]
-    Default: "1.16"
+    AllowedValues: [ "1.17", "1.16" ]
+    Default: "1.17"
   BastionRole:
     Type: String
     Default: ""
