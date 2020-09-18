@@ -38,6 +38,30 @@ Parameters:
     Default: bursting
   ClusterName:
     Type: String
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: quickstart-boomi-molecule-eks/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  QSS3BucketRegion:
+    Default: 'us-east-1'
+    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
+      hosted. When using your own bucket, you must specify this value.
+    Type: String
 Rules:
   ProvisionedThroughput:
     RuleCondition: !Equals [ !Ref ThroughputMode, provisioned ]
@@ -56,6 +80,7 @@ Conditions:
   2AZDeployment: !Or
     - !Not [!Equals [!Ref PrivateSubnet2ID, ""]]
     - !Not [!Equals [!Ref PrivateSubnet3ID, ""]]
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
 Resources:
   EFSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -101,7 +126,6 @@ Resources:
       FileSystemId: !Ref EFSFileSystem
       SecurityGroups: [ !Ref EFSSecurityGroup ]
       SubnetId: !Ref PrivateSubnet3ID
-
   EFSCSIDriver:
     Type: "AWSQS::Kubernetes::Helm"
     Metadata:
@@ -114,10 +138,8 @@ Resources:
       Repository: https://kubernetes-sigs.github.io/aws-efs-csi-driver/
       Chart: aws-efs-csi-driver/aws-efs-csi-driver
       Name: aws-efs-csi-driver
-
   KubeManifestPersistentVolumes:
     Type: "Custom::KubeManifest"
-    DeletionPolicy: Retain
     Metadata:
       DependsOn:
         - !Ref EFSCSIDriver
@@ -143,10 +165,8 @@ Resources:
           csi:
             driver: efs.csi.aws.com
             volumeHandle: !Ref EFSFileSystem
-
   KubeManifestPersistentVolumesClaim:
     Type: "Custom::KubeManifest"
-    DeletionPolicy: Retain
     Metadata:
       DependsOn:
         - !Ref KubeManifestPersistentVolumes
@@ -156,4 +176,7 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      Url: https://raw.githubusercontent.com/ikanski/EKS/master/config/boomi_molecule_eks_pvclaim.yaml
+      Url: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/boomi_molecule_eks_pvclaim.yaml
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]

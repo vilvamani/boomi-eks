@@ -27,9 +27,34 @@ Parameters:
       - ALB
       - NLB
     Description: EKS Service Load Balancer Type.
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: quickstart-boomi-molecule-eks/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  QSS3BucketRegion:
+    Default: 'us-east-1'
+    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
+      hosted. When using your own bucket, you must specify this value.
+    Type: String
 Conditions:
   NetworkLoadBalancer: !Equals [ !Ref LoadBalancerType, NLB]
   ApplicationLoadBalancer: !Equals [ !Ref LoadBalancerType, ALB]
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
 Resources:
   KubeManifestSecret:
     Type: "Custom::KubeManifest"
@@ -110,7 +135,10 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_service-alb.yaml
+      Url: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/boomi_molecule_eks_service-alb.yaml
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
   KubeManifestMoleculeIngress:
     Condition: ApplicationLoadBalancer
     Type: "Custom::KubeManifest"
@@ -161,10 +189,12 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      Url: https://raw.githubusercontent.com/vilvamani/EKS/master/config/boomi_molecule_eks_statefulset.yaml
+      Url: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/boomi_molecule_eks_statefulset.yaml
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
   KubeManifestHPA:
     Type: "Custom::KubeManifest"
-    DeletionPolicy: Retain
     Metadata:
       DependsOn:
        - !Ref KubeManifestMoleculeStatefulSet
@@ -174,4 +204,7 @@ Resources:
       ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-CustomKubeManifest-${ClusterName}"
       ClusterName: !Ref ClusterName
       # Kubernetes manifest URL
-      Url: https://raw.githubusercontent.com/ikanski/EKS/master/config/boomi_molecule_eks_hpa.yaml
+      Url: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/boomi_molecule_eks_hpa.yaml
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]

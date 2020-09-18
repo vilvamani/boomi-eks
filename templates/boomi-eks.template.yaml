@@ -595,6 +595,9 @@ Resources:
         PerformanceMode: !Ref EfsPerformanceMode
         EfsProvisionedThroughputInMibps: !Ref EfsProvisionedThroughputInMibps
         ThroughputMode: !Ref EfsThroughputMode
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}boomi/kube/config'
+        QSS3BucketRegion: !Ref QSS3BucketRegion
   LambdaZipsBucket:
     Type: AWS::S3::Bucket
     Condition: CreateLambdaZipsBucket
@@ -694,6 +697,9 @@ Resources:
         BoomiAccountID: !Ref BoomiAccountID
         CertificateArn: !Ref SSLCertificateArn
         LoadBalancerType: !Ref LoadBalancerType
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}boomi/kube/config'
+        QSS3BucketRegion: !Ref QSS3BucketRegion
 Outputs:
   BastionIP:
     Value: !If

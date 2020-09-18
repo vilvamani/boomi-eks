@@ -279,7 +279,7 @@ def delete_handler(event, _):
     physical_resource_id,  manifest_file = handler_init(event)
     if not manifest_file:
         return physical_resource_id
-    run_command("kubectl delete --validate=false -f %s" % manifest_file)
+    run_command("kubectl delete -f %s" % manifest_file)
 
 
 def lambda_handler(event, context):
