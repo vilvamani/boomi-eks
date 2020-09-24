@@ -1,4 +1,4 @@
-# Re-using Amazon EKS Quick Start as a component in your own project
+# Re-using Boomi EKS Molecule Quick Start as a component in your own project
 
 This Quick Start is designed as a framework for deploying kubernetes based applications into Amazon EKS using AWS 
 CloudFormation. It can be used to provide:
@@ -29,6 +29,6 @@ the master stack
  
 ## Using as submodule
 
-You can use the `amazon-eks-master.template.yaml`, and `amazon-eks-master-existing-vpc.template.yaml` files as a starting point for building your own templates, updating the 
+You can use the `amazon-eks-master.template.yaml` and `amazon-eks-master-existing-vpc.template.yaml` files as a starting point for building your own templates, updating the 
 paths in both to point to the eks submodule for all needed templates and adding a workload template to 
 `amazon-eks-master-existing-vpc.template.yaml` (can use `example-workload.template.yaml` as a starting point for this).
